@@ -63,3 +63,16 @@ def get_single_order(id):
             requested_order = order
 
     return requested_order
+
+
+def create_order(new_order):
+    """function to create a new order"""
+    
+    #find the last id in the ORDERS list
+    last_id = ORDERS[-1]["id"]
+
+    new_order["id"] = last_id + 1
+
+    ORDERS.append(new_order)
+
+    return new_order
