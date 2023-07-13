@@ -19,3 +19,13 @@ STYLES = [
 def get_all_styles():
     """function to return the whole list of dictionaries for styles"""
     return STYLES
+
+def get_single_style(id):
+    """function to return a single dictionary from the list of styles"""
+    requested_style = None
+
+    for style in STYLES:
+        if style["id"] == id:
+            requested_style = style
+
+    return requested_style

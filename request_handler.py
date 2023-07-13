@@ -1,30 +1,65 @@
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from views import get_all_metals
-from views import get_all_orders
-from views import get_all_sizes
-from views import get_all_styles
+from views import get_all_metals, get_single_metal
+from views import get_all_orders, get_single_order
+from views import get_all_sizes, get_single_size
+from views import get_all_styles, get_single_style
 
 
 class HandleRequests(BaseHTTPRequestHandler):
     """Controls the functionality of any GET, PUT, POST, DELETE requests to the server
     """
 
+    def parse_url(self, path):
+        """parses the url path string
+        """
+        path_params = path.split("/")
+        resource = path_params[1]
+        id = None
+
+        # Try to get the item at index 2
+        try:
+            # This is the new parseInt()
+            id = int(path_params[2])
+        except IndexError:
+            pass  # No route parameter exists: /animals
+        except ValueError:
+            pass  # Request had trailing slash: /animals/
+
+        return (resource, id)  # This is a tuple
+
     def do_GET(self):
         """Handles GET requests to the server """
         self._set_headers(200)
 
-        if self.path == "/metals":
-            response = get_all_metals()
+        response = {}
 
-        elif self.path == "/orders":
-            response = get_all_orders()
+        # Parse the URL and capture the tuple that is returned
+        (resource, id) = self.parse_url(self.path)
 
-        elif self.path == "/sizes":
-            response = get_all_sizes()
+        if resource == "metals":
+            if id is not None:
+                response = get_single_metal(id)
+            else:
+                response = get_all_metals()
 
-        elif self.path == "/styles":
-            response = get_all_styles()
+        elif resource == "orders":
+            if id is not None:
+                response = get_single_order(id)
+            else:
+                response = get_all_orders()
+
+        elif resource == "sizes":
+            if id is not None:
+                response = get_single_size(id)
+            else:
+                response = get_all_sizes()
+
+        elif resource == "styles":
+            if id is not None:
+                response = get_single_style(id)
+            else:
+                response = get_all_styles()
 
         else:
             response = []
@@ -62,9 +97,9 @@ class HandleRequests(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods',
-                         'GET, POST, PUT, DELETE')
+                        'GET, POST, PUT, DELETE')
         self.send_header('Access-Control-Allow-Headers',
-                         'X-Requested-With, Content-Type, Accept')
+                        'X-Requested-With, Content-Type, Accept')
         self.end_headers()
 
 
