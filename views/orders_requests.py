@@ -76,3 +76,14 @@ def create_order(new_order):
     ORDERS.append(new_order)
 
     return new_order
+
+def delete_order(id):
+    """function to delete an order"""
+    order_index = -1
+
+    for index, order in enumerate(ORDERS):
+        if order["id"] == id:
+          order_index = index
+
+    if order_index >= 0:
+        ORDERS.pop(order_index)
