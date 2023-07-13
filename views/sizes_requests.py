@@ -30,3 +30,12 @@ def get_all_sizes():
     """function to return the whole list of dictionaries for sizes"""
     return SIZES
 
+def get_single_size(id):
+    """function to return a single dictionary from the list of sizes"""
+    requested_size = None
+
+    for size in SIZES:
+        if size["id"] == id:
+            requested_size = size
+
+    return requested_size
