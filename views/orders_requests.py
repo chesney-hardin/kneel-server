@@ -1,3 +1,6 @@
+import sqlite3
+from models import Order, Metal, Style, Size
+
 ORDERS = [
     {
       "metalId": 3,
@@ -51,47 +54,137 @@ ORDERS = [
 
 def get_all_orders():
     """function to return the whole list of dictionaries for orders"""
-    return ORDERS
+    with sqlite3.connect("./kneeldiamonds.sqlite3") as conn:
+        
+      conn.row_factory = sqlite3.Row
+      db_cursor = conn.cursor()
+
+      db_cursor.execute("""
+      SELECT 
+        o.id,
+        o.time_stamp,
+        o.metal_id,
+        o.size_id,
+        o.style_id,
+        m.metal metal,
+        m.price metal_price,
+        sz.carets carets,
+        sz.price carets_price,
+        s.style style,
+        s.price style_price
+      FROM Orders o
+      JOIN Metals m ON m.id = o.metal_id
+      JOIN Sizes sz ON sz.id = o.size_id
+      JOIN Styles s ON s.id = o.style_id;
+      """)
+
+      orders = []
+
+      dataset = db_cursor.fetchall()
+
+      for row in dataset:
+
+        # Create an order instance from the current row
+        order = Order(row['id'], row['time_stamp'], row['metal_id'], row['size_id'], row['style_id'])
+
+        metal = Metal(row['id'], row['metal'], row['metal_price'])
+        # Create a Size instance from the current row
+        size = Size(row['id'], row['carets'], row['carets_price'])
+        # Create a Style instance from the current row
+        style = Style(row['id'], row['style'], row['style_price'])
+
+        # Add the dictionary representation of related object to the order instance
+        # Here what added the size would look like. You add the other two.
+        added_metal = metal.__dict__
+        added_metal.pop('id')
+        order.metal = added_metal
+        added_size = size.__dict__
+        added_size.pop('id')
+        order.size = added_size
+        added_style = style.__dict__
+        added_style.pop('id')
+        order.style = added_style
+        # Add the dictionary representation of the order to the list
+        orders.append(order.__dict__)
+      
+      return orders
 
 
 def get_single_order(id):
     """function to return a single dictionary from the list of orders"""
-    requested_order = None
+    with sqlite3.connect("./kneeldiamonds.sqlite3") as conn: 
+      conn.row_factory = sqlite3.Row
+      db_cursor = conn.cursor()
 
-    for order in ORDERS:
-        if order["id"] == id:
-            requested_order = order
+      db_cursor.execute("""
+      SELECT 
+        o.id,
+        o.time_stamp,
+        o.metal_id,
+        o.size_id,
+        o.style_id
+      FROM Orders o
+      WHERE o.id = ?
+      """, (id, ))
 
-    return requested_order
+      data = db_cursor.fetchone()
+
+      order = Order( data['id'], data['time_stamp'],
+                        data['metal_id'], data['size_id'], data['style_id'])
+          
+      return order.__dict__
 
 
 def create_order(new_order):
     """function to create a new order"""
+    with sqlite3.connect("./kneeldiamonds.sqlite3") as conn:
+        db_cursor = conn.cursor()
+
+        db_cursor.execute("""
+          INSERT INTO Orders
+              ( time_stamp, metal_id, size_id, style_id )
+          VALUES
+              ( ?, ?, ?, ? );
+          """, (new_order['time_stamp'], new_order['metal_id'], 
+                new_order['size_id'], new_order['style_id']))
+        
+        id = db_cursor.lastrowid
+
+        new_order['id'] = id
     
-    #find the last id in the ORDERS list
-    last_id = ORDERS[-1]["id"]
-
-    new_order["id"] = last_id + 1
-
-    ORDERS.append(new_order)
-
     return new_order
 
 def delete_order(id):
     """function to delete an order"""
-    order_index = -1
+    with sqlite3.connect("./kneeldiamonds.sqlite3") as conn:
+        db_cursor = conn.cursor()
 
-    for index, order in enumerate(ORDERS):
-        if order["id"] == id:
-          order_index = index
+        db_cursor.execute("""
+        DELETE FROM Orders
+        WHERE id = ?
+        """, (id, ))
 
-    if order_index >= 0:
-        ORDERS.pop(order_index)
-
-def update_order(id, new_order):
+def update_order(id, order):
     """updates an existing order"""
-    for index, order in enumerate(ORDERS):
-        if order["id"] ==id:
-            ORDERS[index] = new_order
-            break
+    # connecting to the database with sqlite3.connect()
+    # "with" 
+    with sqlite3.connect("./kneeldiamonds.sqlite3") as conn:
+        db_cursor = conn.cursor()
+
+        db_cursor.execute("""
+        UPDATE Orders
+            SET
+                time_stamp = ?,
+                metal_id = ?,
+                size_id = ?,
+                style_id = ?
+          WHERE id = ?
+        """, (order['time_stamp'], order['metal_id'],
+              order['size_id'], order['style_id'], id ))
         
+        rows_affected = db_cursor.rowcount
+
+        if rows_affected == 0:
+            return False
+        else:
+            return True
